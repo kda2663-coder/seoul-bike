@@ -7,8 +7,8 @@ export default async function handler(req, res) {
 
     const { startX, startY, endX, endY } = req.query;
     
-    // 🚶 보행자 경로용 주소 (자전거가 안 보일 때 가장 확실한 대안)
-    const url = 'https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json';
+    // 🚲 Tmap 자전거 경로 API 정식 주소
+    const url = 'https://apis.openapi.sk.com/tmap/routes/bicycle?version=1&format=json';
 
     try {
         const response = await fetch(url, {
@@ -22,16 +22,25 @@ export default async function handler(req, res) {
                 startY: startY,
                 endX: endX,
                 endY: endY,
-                startName: encodeURIComponent("출발지"), // 👈 보행자 경로 필수값 추가
-                endName: encodeURIComponent("목적지"),   // 👈 보행자 경로 필수값 추가
+                // 블로그 힌트: 한글 이름은 반드시 포함되어야 하며, 인코딩이 필요할 수 있음
+                startName: "출발지",
+                endName: "목적지",
                 reqCoordType: "WGS84GEO",
-                resCoordType: "WGS84GEO"
+                resCoordType: "WGS84GEO",
+                searchOption: "0" // 0: 최적경로
             })
         });
 
         const data = await response.json();
-        res.status(response.status).json(data);
+        
+        // 서버 로그 확인용 (Vercel 대시보드에서 보임)
+        if (!response.ok) {
+            console.error("Tmap API Error:", data);
+            return res.status(response.status).json(data);
+        }
+
+        res.status(200).json(data);
     } catch (error) {
-        res.status(500).json({ error: "통신 실패", detail: error.message });
+        res.status(500).json({ error: "통신 실패", message: error.message });
     }
 }
