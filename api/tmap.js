@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     const { startX, startY, endX, endY } = req.query;
-    const url = 'https://apis.openapi.sk.com/tmap/routes/bicycle?version=1&format=json';
+    const url = 'https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json';
 
     // 1. 키가 비어있는지 서버 로그로 확인
     if (!process.env.TMAP_API_KEY) {
