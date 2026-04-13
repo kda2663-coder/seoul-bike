@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>서울이음 V2 - 따릉이 전용 경로 가이드</title>
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <style>
+        :root {
+            --primary-color: #359A3E;
+            /* 따릉이 공식 초록 */
+            --primary-light: #e6f4ea;
+            --secondary-color: #2d3436;
+            --text-main: #222;
+            --text-sub: #666;
+            --bg-gray: #f8f9fa;
+            --border-color: #eee;
+            --sidebar-width: 380px;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            color: var(--text-main);
+        }
+
+        #app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #sidebar {
+            width: var(--sidebar-width);
+            background: white;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .header {
+            padding: 24px 20px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+        }
+
+        .search-container {
+            padding: 20px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-prefix {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .start-prefix {
+            border: 2px solid var(--primary-color);
+        }
+
+        .end-prefix {
+            background: #e74c3c;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 14px 14px 35px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            margin-top: 5px;
+            box-shadow: var(--shadow);
+            z-index: 1100;
+            max-height: 250px;
+            overflow-y: auto;
+            display: none;
+            border: 1px solid var(--border-color);
+        }
+
+        .result-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f9f9f9;
+            transition: background 0.2s;
+        }
+
+        .result-item:hover {
+            background: var(--bg-gray);
+        }
+
+        .result-item .place-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: block;
+        }
+
+        .result-item .address {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-top: 2px;
+        }
+
+        .btn-search {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: filter 0.2s;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-search:hover {
+            filter: brightness(0.9);
+        }
+
+        #result {
+            flex: 1;
+            overflow-y: auto;
+            background: var(--bg-gray);
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* V2 전용 결과 카드 */
+        .v2-route-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .v2-total-summary {
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--bg-gray);
+            padding-bottom: 15px;
+        }
+
+        .v2-time-box {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .v2-time {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--primary-color);
+        }
+
+        .v2-dist {
+            font-size: 1rem;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
+        .v2-steps {
+            position: relative;
+        }
+
+        .v2-step {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .v2-step::after {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 24px;
+            bottom: -30px;
+            width: 2px;
+            background: #eee;
+        }
+
+        .v2-step.bike-seg::after {
+            background: var(--primary-color);
+            width: 3px;
+        }
+
+        .v2-step:last-child::after {
+            display: none;
+        }
+
+        .v2-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            border: 4px solid #ddd;
+            z-index: 10;
+            margin-top: 4px;
+        }
+
+        .v2-dot.active {
+            border-color: var(--primary-color);
+        }
+
+        .v2-step-content {
+            flex: 1;
+        }
+
+        .v2-step-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .v2-step-desc {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            line-height: 1.4;
+        }
+
+        .v2-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .badge-walk {
+            background: #f1f2f6;
+            color: #747d8c;
+        }
+
+        .badge-bike {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        #map {
+            flex: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="app">
+        <div id="sidebar">
+            <div class="header">
+                <div class="logo"><span>🚲</span> 서울이음 V2</div>
+                <div class="subtitle">대여소 최적 거점 중심 경로 탐색</div>
+            </div>
+
+            <div class="search-container">
+                <div class="input-group">
+                    <div class="input-prefix start-prefix"></div>
+                    <input type="text" id="startInput" placeholder="출발지" autocomplete="off">
+                    <div id="startResults" class="search-results"></div>
+                </div>
+                <div class="input-group">
+                    <div class="input-prefix end-prefix"></div>
+                    <input type="text" id="endInput" placeholder="도착지" autocomplete="off">
+                    <div id="endResults" class="search-results"></div>
+                </div>
+                <button class="btn-search" onclick="calculateV2Route()">
+                    <span>🔍</span> 따릉이 최적 경로 찾기
+                </button>
+            </div>
+
+            <div id="result">
+                <div style="text-align: center; margin-top: 60px; color: #ccc;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🚲</div>
+                    <p style="font-weight: 600;">출발지와 도착지를 입력하시면<br>가장 가까운 대여소로 안내해드려요.</p>
+                </div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        /* 1. 카카오 지도 및 기본 설정 */
+        let map, ps;
+        let startPoint = null;
+        let endPoint = null;
+        let markers = [];
+        let polylines = [];
+        let bikeStations = [];
+
+        const kakaoScript = document.createElement('script');
+        kakaoScript.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false&libraries=services`;
+        kakaoScript.onload = () => {
+            kakao.maps.load(() => initMap());
+        };
+        document.head.appendChild(kakaoScript);
+
+        function initMap() {
+            const container = document.getElementById('map');
+            map = new kakao.maps.Map(container, {
+                center: new kakao.maps.LatLng(37.5665, 126.9780),
+                level: 3
+            });
+            ps = new kakao.maps.services.Places();
+
+            loadBikeStations();
+            setupSearchInput('startInput', 'startResults', (place) => { startPoint = place; });
+            setupSearchInput('endInput', 'endResults', (place) => { endPoint = place; });
+        }
+
+        /* 2. 따릉이 실시간 데이터 로드 */
+        async function loadBikeStations() {
+            const url = `http://openapi.seoul.go.kr:8088/${SEOUL_DATA_API_KEY}/json/bikeList/1/1000/`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                bikeStations = data.rentBikeStatus.row;
+            } catch (e) {
+                console.error("따릉이 데이터 로드 실패");
+            }
+        }
+
+        /* 3. 장소 검색 설정 */
+        function setupSearchInput(inputId, resultsId, onSelect) {
+            const input = document.getElementById(inputId);
+            const results = document.getElementById(resultsId);
+
+            input.addEventListener('input', () => {
+                const key = input.value.trim();
+                if (key.length < 2) { results.style.display = 'none'; return; }
+
+                ps.keywordSearch(key, (data, status) => {
+                    if (status === kakao.maps.services.Status.OK) {
+                        displaySearchResults(results, data, (place) => {
+                            input.value = place.place_name;
+                            results.style.display = 'none';
+                            onSelect(place);
+                            addPlaceMarker(place);
+                        });
+                    }
+                });
+            });
+        }
+
+        function displaySearchResults(container, data, onSelect) {
+            container.innerHTML = "";
+            container.style.display = 'block';
+            data.slice(0, 5).forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                div.innerHTML = `<span class="place-name">${p.place_name}</span><span class="address">${p.road_address_name || p.address_name}</span>`;
+                div.onclick = () => onSelect(p);
+                container.appendChild(div);
+            });
+        }
+
+        function addPlaceMarker(place) {
+            const pos = new kakao.maps.LatLng(place.y, place.x);
+            const m = new kakao.maps.Marker({ position: pos, map: map });
+            markers.push(m);
+            map.panTo(pos);
+        }
+
+        /* 4. V2 핵심: 최적 거점 탐색 및 3단계 경로 계산 */
+        async function calculateV2Route() {
+            if (!startPoint || !endPoint) return alert("출발지와 도착지를 입력해주세요.");
+
+            const resultArea = document.getElementById('result');
+            resultArea.innerHTML = '<div style="text-align:center; padding:50px;"><div class="v2-time" style="font-size:1.2rem; margin-bottom:10px;">🚲 최적 경로 분석 중...</div><p style="color:#888;">도보와 자전거 구간을 결합하고 있습니다.</p></div>';
+
+            try {
+                // 1. 최적 대여소 탐색 (도보 시간 기준 상위 3개 중 선별)
+                const sA = await findBestStation(startPoint.x, startPoint.y, true);
+                const sB = await findBestStation(endPoint.x, endPoint.y, false);
+
+                if (!sA || !sB) throw new Error("주변에 이용 가능한 대여소가 없습니다.");
+
+                // 2. 경로 데이터 병렬 호출 (도보 2회 + 자전거 3개 옵션)
+                const [walk1, walk2, bike0, bike1, bike2] = await Promise.all([
+                    fetchTmapRoute(startPoint.x, startPoint.y, sA.stationLongitude, sA.stationLatitude, 'pedestrian'),
+                    fetchTmapRoute(sB.stationLongitude, sB.stationLatitude, endPoint.x, endPoint.y, 'pedestrian'),
+                    fetchTmapRoute(sA.stationLongitude, sA.stationLatitude, sB.stationLongitude, sB.stationLatitude, 'bicycle', "0"),
+                    fetchTmapRoute(sA.stationLongitude, sA.stationLatitude, sB.stationLongitude, sB.stationLatitude, 'bicycle', "1"),
+                    fetchTmapRoute(sA.stationLongitude, sA.stationLatitude, sB.stationLongitude, sB.stationLatitude, 'bicycle', "2")
+                ]);
+
+                // 3. 데이터 렌더링
+                displayV2Results([bike0, bike1, bike2], walk1, walk2, sA, sB);
+
+                // 4. 지도 첫 번째 경로 자동 선택
+                selectRoute(0);
+
+            } catch (e) {
+                console.error("경로 탐색 실패:", e);
+                resultArea.innerHTML = `<p style="text-align:center; padding:50px;">경로를 찾을 수 없습니다.<br><small>${e.message}</small></p>`;
+            }
+        }
+
+
+        /* [고도화] 직선거리 상위 3개 중 실제 도보 최단 시간 대여소 찾기 */
+        async function findBestStation(x, y, isStart) {
+            const candidates = bikeStations
+                .filter(s => isStart ? parseInt(s.parkingBikeTotCnt) > 0 : true)
+                .map(s => ({
+                    ...s,
+                    d: Math.sqrt(Math.pow(s.stationLongitude - x, 2) + Math.pow(s.stationLatitude - y, 2))
+                }))
+                .sort((a, b) => a.d - b.d)
+                .slice(0, 3);
+
+            const tests = await Promise.all(candidates.map(async (s) => {
+                try {
+                    const r = await fetchTmapRoute(x, y, s.stationLongitude, s.stationLatitude, 'pedestrian');
+                    return { station: s, time: r.time };
+                } catch (e) { return { station: s, time: Infinity }; }
+            }));
+
+            const best = tests.sort((a, b) => a.time - b.time)[0];
+            return best ? best.station : null;
+        }
+
+        /* Tmap API 호출 래퍼 (성공했던 규격으로 복구) */
+        async function fetchTmapRoute(sx, sy, ex, ey, type, option = "0") {
+            const isBike = type === 'bicycle';
+
+            // TMAP REST API 표준 규격 (JSON + Header 인증)
+            const baseUrl = `https://apis.openapi.sk.com/tmap/routes/${isBike ? 'bicycle' : 'pedestrian'}?version=1&format=json`;
+
+            const bodyData = {
+                startX: sx,
+                startY: sy,
+                endX: ex,
+                endY: ey,
+                startName: "출발",
+                endName: "도착",
+                reqCoordType: "WGS84GEO",
+                resCoordType: "WGS84GEO",
+                searchOption: option
+            };
+
+            try {
+                const response = await fetch(baseUrl, {
+                    method: 'POST',
+                    headers: {
+                        "appKey": TMAP_API_KEY,           // 인증키는 헤더에 포함
+                        "Content-Type": "application/json", // 데이터 형식은 JSON
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify(bodyData)
+                });
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`API 응답 오류: ${response.status} - ${errText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.features || data.features.length === 0) {
+                    throw new Error("경로를 찾을 수 없습니다.");
+                }
+
+                // 좌표 추출 로직
+                let coords = [];
+                data.features.forEach(f => {
+                    if (f.geometry.type === "LineString") {
+                        f.geometry.coordinates.forEach(c => {
+                            coords.push(new kakao.maps.LatLng(c[1], c[0]));
+                        });
+                    }
+                });
+
+                return {
+                    coords: coords,
+                    // TMAP은 보행자와 자전거의 시간/거리 필드명이 다를 수 있어 둘 다 대응
+                    time: data.features[0].properties.totalTime || data.features[0].properties.time,
+                    dist: data.features[0].properties.totalDistance || data.features[0].properties.distance,
+                    type: type,
+                    optionName: option === "0" ? "추천" : option === "1" ? "최단" : "도로위주"
+                };
+            } catch (e) {
+                console.error(`🚫 ${type} 경로 호출 실패:`, e);
+                throw e;
+            }
+        }
+
+        /* 전역 변수로 현재 경로 데이터 관리 */
+        let currentRoutes = [];
+
+        function displayV2Results(bikeRoutes, walk1, walk2, sA, sB) {
+            const resultArea = document.getElementById('result');
+            resultArea.innerHTML = `
+                <div id="route-list" style="margin-bottom:20px;"></div>
+                <div id="route-detail" class="v2-route-card" style="display:none; border-style:dashed; border-color:#ccc;"></div>
+            `;
+            const listContainer = document.getElementById('route-list');
+            currentRoutes = bikeRoutes.map(br => ({ bike: br, walk1, walk2, sA, sB }));
+
+            bikeRoutes.forEach((br, idx) => {
+                const t = Math.round((walk1.time + br.time + walk2.time) / 60);
+                const d = ((walk1.dist + br.dist + walk2.dist) / 1000).toFixed(1);
+
+                const card = document.createElement('div');
+                card.className = `v2-route-card ${idx === 0 ? 'active' : ''}`;
+                card.style.marginBottom = "10px";
+                card.style.cursor = "pointer";
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="v2-time-box">
+                            <span class="v2-time">${t}분</span>
+                            <span class="v2-dist">${d}km</span>
+                        </div>
+                        <span class="v2-badge badge-bike">${br.optionName}</span>
+                    </div>
+                `;
+                card.onclick = () => selectRoute(idx);
+                listContainer.appendChild(card);
+            });
+        }
+
+        function selectRoute(idx) {
+            const data = currentRoutes[idx];
+            if (!data) return;
+
+            document.querySelectorAll('.v2-route-card').forEach((c, i) => {
+                c.classList.toggle('active', i === idx);
+            });
+
+            // 상세 단계 UI 렌더링
+            const detailArea = document.getElementById('route-detail');
+            detailArea.style.display = 'block';
+            detailArea.innerHTML = `
+                <div class="v2-steps">
+                    <div class="v2-step">
+                        <div class="v2-dot active"></div>
+                        <div class="v2-step-content">
+                            <div class="v2-step-title">
+                                <span>출발지에서 도보</span>
+                                <span class="v2-badge badge-walk">${Math.round(data.walk1.time / 60)}분</span>
+                            </div>
+                            <div class="v2-step-desc">'${data.sA.stationName.split('.')[1] || data.sA.stationName}' 대여소까지</div>
+                        </div>
+                    </div>
+                    <div class="v2-step bike-seg">
+                        <div class="v2-dot active" style="border-color:var(--primary-color)"></div>
+                        <div class="v2-step-content">
+                            <div class="v2-step-title" style="color:var(--primary-color)">
+                                <span>🚲 따릉이 라이딩</span>
+                                <span class="v2-badge badge-bike">${Math.round(data.bike.time / 60)}분</span>
+                            </div>
+                            <div class="v2-step-desc">'${data.sB.stationName.split('.')[1] || data.sB.stationName}' 대여소까지 이동</div>
+                        </div>
+                    </div>
+                    <div class="v2-step">
+                        <div class="v2-dot"></div>
+                        <div class="v2-step-content">
+                            <div class="v2-step-title">
+                                <span>도착지까지 걷기</span>
+                                <span class="v2-badge badge-walk">${Math.round(data.walk2.time / 60)}분</span>
+                            </div>
+                            <div class="v2-step-desc">최종 목적지 도착</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            renderAllPolylines_v2(data);
+        }
+
+        /* 지도 위 경로 및 화살표 렌더링 */
+        function renderAllPolylines_v2(data) {
+            polylines.forEach(p => p.setMap(null));
+            polylines = [];
+            if (window.arrows) window.arrows.forEach(a => a.setMap(null));
+            window.arrows = [];
+
+            const bounds = new kakao.maps.LatLngBounds();
+            const segments = [data.walk1, data.bike, data.walk2];
+
+            segments.forEach((seg, i) => {
+                const isBike = seg.type === 'bicycle';
+                const poly = new kakao.maps.Polyline({
+                    path: seg.coords,
+                    strokeWeight: isBike ? 8 : 5,
+                    strokeColor: isBike ? "var(--primary-color)" : "#888",
+                    strokeOpacity: 0.8,
+                    strokeStyle: isBike ? 'solid' : 'dashed',
+                    map: map
+                });
+                polylines.push(poly);
+                seg.coords.forEach(c => bounds.extend(c));
+
+                if (isBike) drawDirectionArrows(seg.coords);
+            });
+            map.setBounds(bounds);
+        }
+
+        function drawDirectionArrows(coords) {
+            const interval = 10;
+            for (let i = 0; i < coords.length - 1; i += interval) {
+                const start = coords[i];
+                const end = coords[i + 1];
+                const angle = Math.atan2(end.getLng() - start.getLng(), end.getLat() - start.getLat()) * 180 / Math.PI;
+
+                const arrow = new kakao.maps.CustomOverlay({
+                    position: start,
+                    content: `<div style="transform:rotate(${angle}deg); color:white; font-size:10px; text-shadow:0 0 2px #000;">▶</div>`,
+                    yAnchor: 0.5
+                });
+                arrow.setMap(map);
+                window.arrows.push(arrow);
+            }
+        }
+    </script>
+</body>
+
+</html>
