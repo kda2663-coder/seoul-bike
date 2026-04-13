@@ -1,37 +1,38 @@
-export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+// calculateComplexRoute 함수 내부의 데이터 처리 부분
+function drawFinalRoute(w1, b, w2) {
+    polylines.forEach(p => p.setMap(null)); // 기존 선 지우기
+    polylines = [];
 
-    if (req.method === 'OPTIONS') return res.status(200).end();
-
-    const { startX, startY, endX, endY, type } = req.query; // type 파라미터 추가
-    
-    // type에 따라 도보 혹은 자전거 API 주소 선택
-    const url = type === 'pedestrian' 
-        ? 'https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json'
-        : 'https://apis.openapi.sk.com/tmap/routes/bicycle?version=1&format=json';
-
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'appKey': process.env.TMAP_API_KEY
-            },
-            body: JSON.stringify({
-                startX, startY, endX, endY,
-                startName: "출발지",
-                endName: "목적지",
-                reqCoordType: "WGS84GEO",
-                resCoordType: "WGS84GEO",
-                searchOption: "0"
-            })
+    const drawLine = (data, color, style, weight) => {
+        const path = [];
+        if (data.features) {
+            data.features.forEach(f => {
+                if (f.geometry.type === "LineString") {
+                    f.geometry.coordinates.forEach(c => path.push(new kakao.maps.LatLng(c[1], c[0])));
+                }
+            });
+        }
+        const line = new kakao.maps.Polyline({
+            path: path,
+            strokeColor: color,
+            strokeStyle: style,
+            strokeWeight: weight,
+            strokeOpacity: 0.8
         });
+        line.setMap(map);
+        polylines.push(line);
+        return path;
+    };
 
-        const data = await response.json();
-        res.status(response.status).json(data);
-    } catch (error) {
-        res.status(500).json({ error: "통신 실패", message: error.message });
-    }
+    // 1구간: 도보 (회색 점선)
+    const p1 = drawLine(w1, '#888', 'dash', 4);
+    // 2구간: 자전거 (연두색 실선)
+    const p2 = drawLine(b, '#2ecc71', 'solid', 7);
+    // 3구간: 도보 (회색 점선)
+    const p3 = drawLine(w2, '#888', 'dash', 4);
+
+    // 모든 경로가 보이도록 지도 확장
+    const bounds = new kakao.maps.LatLngBounds();
+    [...p1, ...p2, ...p3].forEach(p => bounds.extend(p));
+    map.setBounds(bounds);
 }
