@@ -5,33 +5,31 @@ export default async function handler(req, res) {
 
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    const { startX, startY, endX, endY } = req.query;
+    const { startX, startY, endX, endY, type } = req.query; // type 파라미터 추가
     
-    // 🚶 가장 확실한 '보행자 경로' 주소로 고정합니다.
-    const url = 'https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json';
+    // type에 따라 도보 혹은 자전거 API 주소 선택
+    const url = type === 'pedestrian' 
+        ? 'https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json'
+        : 'https://apis.openapi.sk.com/tmap/routes/bicycle?version=1&format=json';
 
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'appKey': process.env.TMAP_API_KEY // Vercel에 등록한 키
+                'appKey': process.env.TMAP_API_KEY
             },
             body: JSON.stringify({
-                startX: startX,
-                startY: startY,
-                endX: endX,
-                endY: endY,
-                startName: "출발지", // 필수값
-                endName: "목적지",   // 필수값
+                startX, startY, endX, endY,
+                startName: "출발지",
+                endName: "목적지",
                 reqCoordType: "WGS84GEO",
-                resCoordType: "WGS84GEO"
+                resCoordType: "WGS84GEO",
+                searchOption: "0"
             })
         });
 
         const data = await response.json();
-
-        // 에러 발생 시 상세 내용을 브라우저 콘솔에 찍어주기 위해 status 전달
         res.status(response.status).json(data);
     } catch (error) {
         res.status(500).json({ error: "통신 실패", message: error.message });
