@@ -1,38 +1,53 @@
-// calculateComplexRoute 함수 내부의 데이터 처리 부분
-function drawFinalRoute(w1, b, w2) {
-    polylines.forEach(p => p.setMap(null)); // 기존 선 지우기
-    polylines = [];
+export default async function handler(req, res) {
+    // 1. 어떤 상황에서도 CORS 헤더를 가장 먼저 설정합니다.
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    const drawLine = (data, color, style, weight) => {
-        const path = [];
-        if (data.features) {
-            data.features.forEach(f => {
-                if (f.geometry.type === "LineString") {
-                    f.geometry.coordinates.forEach(c => path.push(new kakao.maps.LatLng(c[1], c[0])));
-                }
-            });
+    if (req.method === 'OPTIONS') return res.status(200).end();
+
+    try {
+        const { startX, startY, endX, endY } = req.query;
+
+        // 파라미터가 비어있는지 체크 (서버 다운 방지)
+        if (!startX || !startY || !endX || !endY) {
+            return res.status(400).json({ error: "필수 좌표값이 없습니다." });
         }
-        const line = new kakao.maps.Polyline({
-            path: path,
-            strokeColor: color,
-            strokeStyle: style,
-            strokeWeight: weight,
-            strokeOpacity: 0.8
+
+        // TMAP_API_KEY 확인
+        if (!process.env.TMAP_API_KEY) {
+            return res.status(500).json({ error: "서버 설정 오류: API KEY가 없습니다." });
+        }
+
+        // 🚶 무조건 성공하는 보행자 경로 주소 사용
+        const url = 'https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json';
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'appKey': process.env.TMAP_API_KEY.trim()
+            },
+            body: JSON.stringify({
+                startX: startX,
+                startY: startY,
+                endX: endX,
+                endY: endY,
+                startName: encodeURIComponent("출발지"),
+                endName: encodeURIComponent("목적지"),
+                reqCoordType: "WGS84GEO",
+                resCoordType: "WGS84GEO"
+            })
         });
-        line.setMap(map);
-        polylines.push(line);
-        return path;
-    };
 
-    // 1구간: 도보 (회색 점선)
-    const p1 = drawLine(w1, '#888', 'dash', 4);
-    // 2구간: 자전거 (연두색 실선)
-    const p2 = drawLine(b, '#2ecc71', 'solid', 7);
-    // 3구간: 도보 (회색 점선)
-    const p3 = drawLine(w2, '#888', 'dash', 4);
+        const data = await response.json();
 
-    // 모든 경로가 보이도록 지도 확장
-    const bounds = new kakao.maps.LatLngBounds();
-    [...p1, ...p2, ...p3].forEach(p => bounds.extend(p));
-    map.setBounds(bounds);
+        // Tmap 응답 상태 그대로 전달
+        return res.status(response.status).json(data);
+
+    } catch (error) {
+        // 여기서 에러를 잡아줘야 서버가 500으로 죽지 않고 CORS 헤더를 유지합니다.
+        console.error("Server Error:", error);
+        return res.status(500).json({ error: "서버 내부 오류", message: error.message });
+    }
 }
